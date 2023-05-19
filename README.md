@@ -33,6 +33,7 @@ Once the Pi is booted, the following things need to be changed in `dietpi-config
 - `Advanced Options > Serial/UART > ttyS0 console`: Off
 - `Advanced Options > Serial/UART > ttyAMA0 console`: Off
 - `Advanced Options > Serial/UART > ttyS0 (mini UART) device`: On
+- `Advanced Options > Bluetooth`: Off
 - `Advanced Options > I2C state`: On
 
 This will add, change, and/or uncomment the following lines in `/boot/config.txt`:
@@ -40,12 +41,12 @@ This will add, change, and/or uncomment the following lines in `/boot/config.txt
 ```
 enable_uart=1
 dtparam=i2c_arm=on
+dtparam=disable-bt
 ```
 
-Additionally, the following two lines need to be manually added to `/boot/config.txt` (just putting them at the bottom works).  These are specific to the Uputronics GPS hat, so your PPS pin and whether you have a supported RTC may differ.  Also, for whatever reason, disabling the Bluetooth device tree seems to be required for GPSd to get valid data from the serial port the GPS hat is on.
+Additionally, the following two lines need to be manually added to `/boot/config.txt` (just putting them at the bottom works).  These are specific to the Uputronics GPS hat, so your PPS pin and whether you have a supported RTC may differ.  Also, for whatever reason, disabling the Bluetooth device tree seems to be required for GPSd to get valid data from the serial port the GPS hat is on (hence the `dtparam=disable-bt` above).
 
 ```
-dtoverlay=disable-bt
 dtoverlay=pps-gpio,gpiopin=18
 dtoverlay=i2c-rtc,rv3028
 ```
