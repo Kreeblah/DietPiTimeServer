@@ -37,19 +37,25 @@ Once the Pi is booted, the following things need to be changed in `dietpi-config
 
 This will add, change, and/or uncomment the following lines in `/boot/config.txt`:
 
-`enable_uart=1`
-`dtparam=i2c_arm=on`
+```
+enable_uart=1
+dtparam=i2c_arm=on
+```
 
 Additionally, the following two lines need to be manually added to `/boot/config.txt` (just putting them at the bottom works).  These are specific to the Uputronics GPS hat, so your PPS pin and whether you have a supported RTC may differ.  Also, for whatever reason, disabling the Bluetooth device tree seems to be required for GPSd to get valid data from the serial port the GPS hat is on.
 
-`dtoverlay=disable-bt`
-`dtoverlay=pps-gpio,gpiopin=18`
-`dtoverlay=i2c-rtc,rv3028`
+```
+dtoverlay=disable-bt
+dtoverlay=pps-gpio,gpiopin=18
+dtoverlay=i2c-rtc,rv3028
+```
 
 The above `dietpi-config` changes also adds these lines to `/etc/modules`:
 
-`i2c-bcm2708`
-`i2c-dev`
+```
+i2c-bcm2708
+i2c-dev
+```
 
 In addition to those lines, you'll need to manually add an additional line to `/etc/modules` (again, just putting it at the bottom is fine):
 
@@ -65,8 +71,10 @@ Note the space there.  `nohz=off` needs to be a separate option from the rest of
 
 After that, you'll need to install some packages (this will remove the `systemd-timesyncd`, which is an NTP client only, but nevertheless conflicts with Chrony):
 
-`apt update`
-`apt install gpsd chrony`
+```
+apt update
+apt install gpsd chrony
+```
 
 Then you'll need to edit some config files.  The first one to modify is `/etc/default/gpsd`.  These are the important options to modify:
 
@@ -167,12 +175,17 @@ If you set up an RTC, you can also write the time to your it (which may be usefu
 
 If the PPS data source is never selected by Chrony, it's possible that it's selecting hosts from pools instead.  You can see this if it has samples it's detecting, but has the `*` by a different source.  To resolve that, comment out the `pool` directive in `/etc/chrony/chrony.conf` and add a `server` directive specifying a single NTP server:
 
-`server ntp.myisp.net`
+```
+# Use an external time server for when a GPS lock isn't available
+server ntp.myisp.net
+```
 
 If Chrony never has any samples for the PPS source (it's always at 0), then it's likely the GPS unit isn't getting a lock.  To check this, you'll need to install the `gpsd-clients` package:
 
-`apt update`
-`apt install gpsd-clients`
+```
+apt update
+apt install gpsd-clients
+```
 
 Once that's installed, run `cgps` and look at the section of the screen on the right, in the column named "Use".  That indicates whether it's able to use (get a lock on) each of the satellites listed.  It's unlikely you'll be able to get a lock on every satellite, but you should be able to get a lock on several of them.  If this isn't happening (and, given some environmental circumstances, getting a lock may take some time, potentially up to a few hours), that will prevent Chrony from being able to source time data properly.  The most likely evidence of this in `cgps` is seeing satellites occasionally showing up as in use and then dropping back off, leaving no satellites in use.  Press the "Q" key to quit `cgps`.
 
@@ -186,8 +199,10 @@ To check whether your RTC is showing up on the RTC bus, you can use `i2cdetect` 
 
 If, for some reason, it's not installed, it can be installed with the following two packages:
 
-`apt update`
-`apt install python3-smbus i2c-tools`
+```
+apt update
+apt install python3-smbus i2c-tools
+```
 
 This checks bus 1 (the one offered by the Pi) and skips the warning that scanning the bus may disrupt devices on it.  This will yield output that should look like the following:
 
