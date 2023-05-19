@@ -92,6 +92,7 @@ GPSD_OPTIONS="-n -s 115200"
 These settings will enable GPSd as a daemon (`START_DAEMON=true`) and use data from the serial port the GPS hat is sending data to (`/dev/ttyAMA0`).  You could also include the PPS device (`/dev/pps0`) separated from the serial device by a space, but there's little reason to do that with GPSd when Chrony will be configured to receive PPS data directly.  The `GPSD_OPTIONS` field sets the following:
 
 `-n`: Begin polling the devices as soon as it launches, instead of waiting for waiting for a client to connect.  Chrony will be your client, but having the polling already set up will speed things up slightly if there's a GPS lock already.
+
 `-s 115200`: Sets the speed to open the serial port at.  This should be the default bit rate your GPS hat communicates at.  For the Uputronics GPS hat, this is 115200 bps, but many GPS devices default to 9600 bps.
 
 There's also an additional option that can be set if you want to trust the GPS hat's RTC (if yours has one) after a power outage but before a new GPS lock happens, assuming your board (such as the Raspberry Pi 4 B) has to built-in RTC:
@@ -123,12 +124,19 @@ These settings set Chrony to announce itself as a stratum 10 server if it only h
 The two `refclock` lines set up the PPS and GPS time sources.
 
 `PPS /dev/pps0`: The device name of the PPS device for Chrony to read from.
+
 `SOCK /run/chrony.ttyAMA0.sock`: A UNIX socket to open for GPSd to write to.  GPSd will automatically send data to the correct sockets Chrony opens as long as they are named as GPSd expects.  The socket names are based on the device names in the `DEVICES` directive in `/etc/defaults/gpsd`.
+
 `refid PPS` and `refid NMEA`: Arbitrary identifiers (up to four ASCII characters) for Chrony to use to refer to these sources when displaying the status of lists of sources.
+
 `lock NMEA`: Has Chrony use the `NMEA` refid as the reference for the PPS source.  Because PPS data itself doesn't include anything more than a data pulse, Chrony needs to reference it against another source to know which second to align it to.  This guarantees that it will use the GPS data as the source to align to.
+
 `precision 1e-7`: The precision of the source.  The Uputronics GPS hat uses the u-blox M8 GPS module, which has a PPS precision of 30 ns, so setting the precision of its source to 100 ns will mean that it should be accurate, as the hardware accuracy will be better than the range we're allowing for it in software.
+
 `delay 0.2`: Half of this value (in seconds) is used to calculate the maximum assumed error of the data source.  The NMEA spec (which is what's used for GPS data streams) specifies a resolution of 100 ms for data streams, so this source should not be assumed to be more precise than that.
+
 `trust`: Assume this source is accurate at all times that it provides valid data, even when it deviates widely from other time sources.  This is useful for situations when other time sources aren't functioning properly.
+
 `prefer`: Prefer sources with this directive above other sources without it.
 
 At this point, you can enable the `gpsd` service:
