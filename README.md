@@ -35,6 +35,7 @@ Once the Pi is booted, the following things need to be changed in `dietpi-config
 - `Advanced Options > Serial/UART > ttyS0 (mini UART) device`: On
 - `Advanced Options > Bluetooth`: Off
 - `Advanced Options > I2C state`: On
+- `Advanced Options > Time sync mode`: Custom
 
 This will add, change, and/or uncomment the following lines in `/boot/config.txt`:
 
@@ -43,6 +44,8 @@ enable_uart=1
 dtparam=i2c_arm=on
 dtparam=disable-bt
 ```
+
+It will also configure DietPi to not depend on syncing time from `systemd-timesyncd` for updates and other operations.  This will prevent DietPi from displaying errors when doing those things.
 
 Additionally, the following two lines need to be manually added to `/boot/config.txt` (just putting them at the bottom works).  These are specific to the Uputronics GPS hat, so your PPS pin and whether you have a supported RTC may differ.  Also, for whatever reason, disabling the Bluetooth device tree seems to be required for GPSd to get valid data from the serial port the GPS hat is on (hence the `dtparam=disable-bt` above).
 
