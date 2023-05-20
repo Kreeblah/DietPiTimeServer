@@ -139,7 +139,7 @@ The two `refclock` lines set up the PPS and GPS time sources.
 
 `delay 0.2`: Half of this value (in seconds) is used to calculate the maximum assumed error of the data source.  The NMEA spec (which is what's used for GPS data streams) specifies a resolution of 100 ms for data streams, so this source should not be assumed to be more precise than that.
 
-`trust`: Assume this source is accurate at all times that it provides valid data, even when it deviates widely from other time sources.  This is useful for situations when other time sources aren't functioning properly.
+`trust`: Assume this source is accurate at all times that it provides valid data, even when it deviates widely from other time sources.  This is useful for situations when other time sources aren't functioning properly.  Because PPS will always be the most accurate time source (as long as it's aligned to the correct second, which locking it to the GPS NMEA data stream should ensure), trusting it is safe.
 
 `prefer`: Prefer sources with this directive above other sources without it.
 
@@ -168,9 +168,9 @@ This will provide output that looks like the following:
 ```
 MS Name/IP address         Stratum Poll Reach LastRx Last sample               
 ===============================================================================
-#* PPS                           0   4   377    16   +101ns[ +255ns] +/-  101ns
-#? NMEA                          0   4   377    15   +163ns[ +163ns] +/-  100ms
-^? ntp.myisp.net                 2   6   377    54  +1533us[+1534us] +/-   20ms
+#* PPS                           0   4   377    10    -19ns[  -30ns] +/-  106ns
+#? NMEA                          0   4   377    10    -69ns[  -80ns] +/-  100ms
+^? ntp.myisp.net                 2   9   377   509  -2116us[-2122us] +/-   18ms
 ```
 
 This lists each of the refid sources from the Chrony config along with any time servers in the config (or servers from pools in the config).  The important column is the one labeled `S`.  If a source is the one actively being used, it will have a `*` there.  If it's possible to use but not currently being used (this will happen for a little bit at startup as the GPS hat gets a lock on satellites and Chrony polls data), it will have a `?`.  If it's determined to be a "falseticker", or an unreliable clock, it will have an `x` and be ineligible for selection.
