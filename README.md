@@ -203,6 +203,41 @@ Once that's installed, run `cgps` and look at the section of the screen on the r
 
 The most likely cause of being unable to lock onto satellites is antenna placement.  Outdoors is ideal but unnecessary.  Placing it near an outside wall and away from metal to avoid signal interference or creating a partial [Faraday cage](https://en.wikipedia.org/wiki/Faraday_cage) will provide better results.  One situation which is difficult to resolve is if the antenna is in a building surrounded by lots of tall buildings, as those can prevent the GPS signals from reaching it.  For most areas, though, placing it near an outside wall is sufficient.  Additionally, some antennas perform better (are more sensitive) than others, so it is possible to compensate for unfortunate environmental circumstances by changing the antenna used.  The specific capabilities of your GPS device (whether it supports multi-band antennas, for example) can help in determining which antenna to use.
 
+If the NMEA data is working, but PPS time isn't, you may be using the wrong GPIO pin for your PPS output, or your hardware may be having issues.  To verify that PPS is working, you'll need to install the `pps-tools` package:
+
+```
+apt update
+apt install pps-tools
+```
+
+And then check your PPS device:
+
+```
+# ppstest /dev/pps0
+trying PPS source "/dev/pps0"
+found PPS source "/dev/pps0"
+ok, found 1 source(s), now start fetching data...
+source 0 - assert 1684702395.999999332, sequence: 186254 - clear  0.000000000, sequence: 0
+source 0 - assert 1684702396.999996791, sequence: 186255 - clear  0.000000000, sequence: 0
+source 0 - assert 1684702397.999996601, sequence: 186256 - clear  0.000000000, sequence: 0
+source 0 - assert 1684702398.999996762, sequence: 186257 - clear  0.000000000, sequence: 0
+source 0 - assert 1684702399.999997691, sequence: 186258 - clear  0.000000000, sequence: 0
+source 0 - assert 1684702400.999996165, sequence: 186259 - clear  0.000000000, sequence: 0
+```
+
+This is what a working PPS device should look like, with regular assertions and clears.  If the PPS device isn't working, you'll see something like this instead:
+
+```
+# ppstest /dev/pps0
+trying PPS source "/dev/pps0"
+found PPS source "/dev/pps0"
+ok, found 1 source(s), now start fetching data...
+time_pps_fetch() error -1 (Connection timed out)
+time_pps_fetch() error -1 (Connection timed out)
+```
+
+If that's the case, you'll want to verify that the GPIO pin you specified is correct for your hardware and, if it is, that your hardware is working properly.
+
 If the RTC isn't showing up, it may not be detected on the I2C bus.  You'll need to see your GPS hat's documentation for which I2C address it's on, but the Uputronics hat shows up on 
 
 To check whether your RTC is showing up on the RTC bus, you can use `i2cdetect` to check what's on your I2C bus.  On the Raspberry Pi 4 B, this will be:
