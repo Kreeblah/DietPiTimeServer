@@ -196,7 +196,7 @@ server ntp.myisp.net
 
 ## NMEA and PPS data sources are always 0
 
-If Chrony never has any samples for the PPS source (it's always at 0), then it's likely the GPS unit isn't getting a lock.  To check this, you'll need to install the `gpsd-clients` package:
+If Chrony never has any samples for the NMEA or PPS sources (both of them are always at 0), then it's likely the GPS unit isn't getting a lock.  To check this, you'll need to install the `gpsd-clients` package:
 
 ```
 apt update
