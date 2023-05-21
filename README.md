@@ -185,12 +185,16 @@ If you set up an RTC, you can also write the time to your it (which may be usefu
 
 # Troubleshooting
 
+## PPS data source never selected
+
 If the PPS data source is never selected by Chrony, it's possible that it's selecting hosts from pools instead.  You can see this if it has samples it's detecting, but has the `*` by a different source.  To resolve that, comment out the `pool` directive in `/etc/chrony/chrony.conf` and add a `server` directive specifying a single NTP server:
 
 ```
 # Use an external time server for when a GPS lock isn't available
 server ntp.myisp.net
 ```
+
+## NMEA and PPS data sources are always 0
 
 If Chrony never has any samples for the PPS source (it's always at 0), then it's likely the GPS unit isn't getting a lock.  To check this, you'll need to install the `gpsd-clients` package:
 
@@ -203,7 +207,9 @@ Once that's installed, run `cgps` and look at the section of the screen on the r
 
 The most likely cause of being unable to lock onto satellites is antenna placement.  Outdoors is ideal but unnecessary.  Placing it near an outside wall and away from metal to avoid signal interference or creating a partial [Faraday cage](https://en.wikipedia.org/wiki/Faraday_cage) will provide better results.  One situation which is difficult to resolve is if the antenna is in a building surrounded by lots of tall buildings, as those can prevent the GPS signals from reaching it.  For most areas, though, placing it near an outside wall is sufficient.  Additionally, some antennas perform better (are more sensitive) than others, so it is possible to compensate for unfortunate environmental circumstances by changing the antenna used.  The specific capabilities of your GPS device (whether it supports multi-band antennas, for example) can help in determining which antenna to use.
 
-If the NMEA data is working, but PPS time isn't, you may be using the wrong GPIO pin for your PPS output, or your hardware may be having issues.  To verify that PPS is working, you'll need to install the `pps-tools` package:
+## PPS data source is always 0
+
+If the NMEA data is working and `cgps` confirms it (in other words, if you have a fix), but PPS time isn't, you may be using the wrong GPIO pin for your PPS output, or your hardware may be having issues.  To verify that PPS is working, you'll need to install the `pps-tools` package:
 
 ```
 apt update
@@ -237,6 +243,8 @@ time_pps_fetch() error -1 (Connection timed out)
 ```
 
 If that's the case, you'll want to verify that the GPIO pin you specified is correct for your hardware and, if it is, that your hardware is working properly.
+
+## RTC isn't showing up
 
 If the RTC isn't showing up, it may not be detected on the I2C bus.  You'll need to see your GPS hat's documentation for which I2C address it's on, but the Uputronics hat shows up on 
 
@@ -277,6 +285,6 @@ There should be a line there that looks something like this:
 
 `[    2.674420] rtc-rv3028 1-0052: registered as rtc0`
 
-Additionally, if you've saved the time to your RTC, you'll likely also see a line that looks like this:
+Additionally, if you've saved the time to your RTC, you'll likely also see a line at boot that looks like this:
 
 `[    2.675849] rtc-rv3028 1-0052: setting system clock to 2023-05-19T06:58:56 UTC (1684479536)`
