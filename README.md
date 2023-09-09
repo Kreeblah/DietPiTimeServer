@@ -28,7 +28,9 @@ This works by having a time server daemon (Chrony, in this case, as it has less 
 
 Assuming you have the hardware set up and ready to go, the first step is to get a copy of the most recent Raspberry Pi 4 image from [the DietPi web site](https://dietpi.com) and write it to a microSD card, just as you would with any other Raspberry Pi 4 DietPi installation.
 
-Once the Pi is booted, the following things need to be changed in `dietpi-config`:
+Once the Pi is booted, wait for the menu to come up, don't make any changes, and then select "Install", acknowledging that you're going to be running a "pure minimal image".
+
+At this point, the following things need to be changed in `dietpi-config`:
 
 - `Advanced Options > Serial/UART > ttyS0 console`: Off
 - `Advanced Options > Serial/UART > ttyAMA0 console`: Off
@@ -37,17 +39,17 @@ Once the Pi is booted, the following things need to be changed in `dietpi-config
 - `Advanced Options > I2C state`: On
 - `Advanced Options > Time sync mode`: Custom
 
-This will add, change, and/or uncomment the following lines in `/boot/config.txt`:
+This will add, change, and/or uncomment the following lines in `/boot/config.txt` (if any of them are not there, add them; the "`dtoverlay=disable-bt`" line in particular may need to be added manually if Bluetooth was already off):
 
 ```
 enable_uart=1
 dtparam=i2c_arm=on
-dtparam=disable-bt
+dtoverlay=disable-bt
 ```
 
 It will also configure DietPi to not depend on syncing time from `systemd-timesyncd` for updates and other operations.  This will prevent DietPi from displaying errors when doing those things.
 
-Additionally, the following two lines need to be manually added to `/boot/config.txt` (just putting them at the bottom works).  These are specific to the Uputronics GPS hat, so your PPS pin and whether you have a supported RTC may differ.  Also, for whatever reason, disabling the Bluetooth device tree seems to be required for GPSd to get valid data from the serial port the GPS hat is on (hence the `dtparam=disable-bt` above).
+Additionally, the following two lines need to be manually added to `/boot/config.txt` (just putting them at the bottom works).  These are specific to the Uputronics GPS hat, so your PPS pin and whether you have a supported RTC may differ.  Also, for whatever reason, disabling the Bluetooth device tree seems to be required for GPSd to get valid data from the serial port the GPS hat is on (hence the `dtoverlay=disable-bt` above).
 
 ```
 dtoverlay=pps-gpio,gpiopin=18
@@ -147,6 +149,10 @@ At this point, you can enable the `gpsd` service:
 
 `systemctl enable gpsd`
 
+And we can enable chrony:
+
+`systemctl enable chrony`
+
 It is highly recommended to set the system time zone to UTC.  To do that, just run the following command and select `Etc/UTC` as the time zone:
 
 `dpkg-reconfigure tzdata`
@@ -173,13 +179,19 @@ MS Name/IP address         Stratum Poll Reach LastRx Last sample
 ^? ntp.myisp.net                 2   9   377   509  -2116us[-2122us] +/-   18ms
 ```
 
+If it doesn't, sometimes you may need to start up Chrony manually on the first boot with:
+
+`service chrony start`
+
+At that point, you should be able to validate as above.
+
 This lists each of the refid sources from the Chrony config along with any time servers in the config (or servers from pools in the config).  The important column is the one labeled `S`.  If a source is the one actively being used, it will have a `*` there.  If it's possible to use but not currently being used (this will happen for a little bit at startup as the GPS hat gets a lock on satellites and Chrony polls data), it will have a `?`.  If it's determined to be a "falseticker", or an unreliable clock, it will have an `x` and be ineligible for selection.
 
 If you eventually (it may take some time, possibly several hours, depending on how long it takes to get a lock on enough satellites) see a `*` here by the PPS source, that means that Chrony has selected it and is serving time data from it.  It's good to validate it by making sure it's not too far off from other time servers listed, but the likelihood of that happening is very low.
 
 At this point, you should be able to configure a client to use your new time server as an NTP source.  If you'd like to validate the accuracy on your client to make sure it's not wildly inaccurate, you can visit [time.is](https://time.is).  The resolution is only going to be in the millisecond range, but it's enough to verify that the synchronization worked and is providing a time that's able to be validated within the error range of an Internet request.
 
-If you set up an RTC, you can also write the time to your it (which may be useful to do on a regular basis, as the RTC will have some amount of drift on its own) with the following:
+If you set up an RTC, you can also write the time to it (which may be useful to do on a regular basis, as the RTC will have some amount of drift on its own) with the following:
 
 `hwclock -w -v`
 
@@ -206,6 +218,8 @@ apt install gpsd-clients
 Once that's installed, run `cgps` and look at the section of the screen on the right, in the column named "Use".  That indicates whether it's able to use (get a lock on) each of the satellites listed.  It's unlikely you'll be able to get a lock on every satellite, but you should be able to get a lock on several of them.  If this isn't happening (and, given some environmental circumstances, getting a lock may take some time, potentially up to a few hours), that will prevent Chrony from being able to source time data properly.  The most likely evidence of this in `cgps` is seeing satellites occasionally showing up as in use and then dropping back off, leaving no satellites in use.  Press the "Q" key to quit `cgps`.
 
 The most likely cause of being unable to lock onto satellites is antenna placement.  Outdoors is ideal but unnecessary.  Placing it near an outside wall and away from metal to avoid signal interference or creating a partial [Faraday cage](https://en.wikipedia.org/wiki/Faraday_cage) will provide better results.  One situation which is difficult to resolve is if the antenna is in a building surrounded by lots of tall buildings, as those can prevent the GPS signals from reaching it.  For most areas, though, placing it near an outside wall is sufficient.  Additionally, some antennas perform better (are more sensitive) than others, so it is possible to compensate for unfortunate environmental circumstances by changing the antenna used.  The specific capabilities of your GPS device (whether it supports multi-band antennas, for example) can help in determining which antenna to use.
+
+The next most likely cause is `gpsd` not being able to connect to the serial port to receive GPS data.  This can most easily be checked with another tool in the `gpsd-clients` package.  To check this, run `gpsmon` and look to see whether there are any JSON payloads streaming.  If the last payload has a class of WATCH, that's likely what's happening.  The most likely cause is some change to the kernel which has altered how the serial port makes data available.
 
 ## PPS data source is always 0
 
